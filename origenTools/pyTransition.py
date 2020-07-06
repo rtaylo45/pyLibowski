@@ -7,7 +7,7 @@ matrix for libowski
 import numpy as np
 import numpy.linalg as LA
 import sys
-from pyOrigen import ORIGENData
+from .pyOrigen import ORIGENData
 
 class transitionMatrix:
 
