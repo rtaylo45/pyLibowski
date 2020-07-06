@@ -1,3 +1,9 @@
+# Data file with the origen transition matrix text files
+data/
+# swp files
+*.swp
+*-swp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
