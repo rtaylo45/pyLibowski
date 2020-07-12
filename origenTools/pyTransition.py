@@ -8,6 +8,7 @@ import numpy as np
 import numpy.linalg as LA
 import sys
 from .pyOrigen import ORIGENData
+from collections import OrderedDict
 
 class transitionMatrix:
 
@@ -33,7 +34,16 @@ class transitionMatrix:
         """
         self._dataObject = ORIGENData(diagDecayFname, diagRxFname, offDiagRxFname)
 
-    def setProblemNuclides(self, nuclideDic, metastable=True):
+    def setProblemNuclidesFromFile(self, fname):
+        """
+        Sets the nuclides in the transition matrix from a file
+
+        @param fname    Location of the file
+        """
+        nuclideDict = self._dataObject.processNuclideList(fname)
+        self.setProblemNuclides(nuclideDict)
+
+    def setProblemNuclides(self, nuclideDic):
         """
         Sets the nuclides to be in the transition matrix
 
@@ -41,8 +51,6 @@ class transitionMatrix:
                             transition matrix. The 'key' is the element
                             the 'values' is an array of the atomic mass 
                             numbers.
-        @param metastable   Set to true if the user wants to include 
-                            metastable nuclides 
         """
         nuclideIDs = []
         # Loops through the dictionary 
@@ -50,15 +58,12 @@ class transitionMatrix:
             if massNumbers:
                 for massNumber in massNumbers:
                     IDs = self._dataObject.getNuclideOrigenIDs(atomicNumber, 
-                        massNumber, addG1=False)
+                        massNumber)
                     for ID in IDs:
-                        if self._dataObject.isMetastable(ID) and not metastable:
-                            pass
-                        else:
-                            nuclideIDs.append(ID)
+                        nuclideIDs.append(ID)
             else:
                 IDs = self._dataObject.getNuclideOrigenIDs(atomicNumber,
-                    massNumber, addG1=False)
+                    massNumber)
                 for ID in IDs:
                     nuclideIDs.append(ID)
         self._nuclides = np.asarray(nuclideIDs)
@@ -72,7 +77,7 @@ class transitionMatrix:
         """
         transMatrix = np.zeros((len(self._nuclides), len(self._nuclides)))
         # builds the matrix index nuclide map
-        matrixIndex_nuclide_map = {}
+        matrixIndex_nuclide_map = OrderedDict()
         for index, nuclide in enumerate(self._nuclides):
             matrixIndex_nuclide_map[nuclide] = index
 
@@ -126,84 +131,3 @@ class transitionMatrix:
         @param nuclideID    Origen ID of the nuclide
         """
         return self._dataObject.convertIDtoEAmName(nuclideID)
-
-
-if __name__=="__main__":
-    #from pyLibowski import CRAM
-    import matplotlib.pyplot as plt
-
-    def unpackSolution(transObj, solDic, sol):
-        nuclides = transObj.getNuclides()
-        newDic = solDic
-        # if the solDic is empty (it will be when the first solution
-        # is upbacked) it builds the solution Dict
-        if not newDic:
-            for nuclide in nuclides:
-                newDic[nuclide] = []
-        # loops over nuclides to update solution
-        for index, nuclide in enumerate(nuclides):
-            oldSol = newDic[nuclide]
-            oldSol.append(sol[index])
-            newDic[nuclide] = oldSol
-        return newDic
-
-    diagDecayFile = "data/diag-dec.txt"
-    diagRxFile = "data/diag-rx.txt"
-    offDiagRxFile = "data/offdiag.txt"
-    flux = 1e13
-
-    transition = transitionMatrix(diagDecayFile, diagRxFile, offDiagRxFile)
-
-    nuclideDic = {'Xe': ['135m'],
-                  'I' : ['135'],
-                  #'Sb': [135],
-                  #'Nd': [149],
-                  #'Te': [135],
-                  'U' : ['238']
-                  }
-    transition.setProblemNuclides(nuclideDic, metastable=True)
-    nuclides = transition.getNuclides()
-    print(nuclides)
-    n0 = np.zeros((len(nuclides), 1))
-    n0[-1] = 1e10
-    tend = 500*100
-    steps = 10000
-    dt = tend/steps
-    t = 0
-    time = []
-    solDic = {}
-    matrix = transition.buildTransitionMatrix(0)
-    print (matrix)
-   
-    for step in range(steps):
-        t = t+dt
-        time.append(t)
-        if t < 1000:
-            flux = 1e13
-        else:
-            flux = 0.0
-            
-        matrix = transition.buildTransitionMatrix(flux)
-        sol = CRAM.apply(matrix, dt, n0)
-        solDic = unpackSolution(transition, solDic, sol)
-        n0 = sol
-    """
-    flux = 1e13
-    matrix = transition.buildTransitionMatrix(flux)
-    for step in range(steps):
-        t = t+dt
-        time.append(t)
-        sol = CRAM.apply(matrix, t, n0)
-        solDic = unpackSolution(transition, solDic, sol)
-    """
-  
-    for nuclideID in solDic.keys():
-        sol = solDic[nuclideID]
-        isotopeName = transition.getNameFromID(nuclideID)
-        plt.plot(time, sol, label=isotopeName)
-    plt.grid()
-    plt.legend()
-    plt.xlabel("Time [s]")
-    plt.ylabel("Atomic number density")
-    plt.yscale("log")
-    plt.show()

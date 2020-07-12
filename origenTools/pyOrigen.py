@@ -11,11 +11,12 @@ obiwan view -type=nucl path/to/origen.f33 >diag-dec.txt
 Using these data files, the ORIGENData class builds an input file for libowski
 to use for setting up depletion problems.
 """
-
+from collections.abc import Iterable
 import numpy as np
 import pandas as pd
 from periodictable import elements
 import sys
+from collections import OrderedDict
 
 class ORIGENData:
 
@@ -96,6 +97,36 @@ class ORIGENData:
         offDiagRxDataFrame = offDiagRxDataFrame.rename(columns={'0.0000e+00': 'rx[barn]'})
 
         return offDiagRxDataFrame
+
+    def processNuclideList(self, fname):
+        """
+        Processes a nuclide input list and returns a python dictionary that 
+        is the nuclide input list 
+
+        @param fname    File name in EAm form
+        """
+        nuclideDict = OrderedDict()
+        # Opens the file and reads the lines
+        with open(fname, 'r') as f:
+            lines = f.readlines()
+            # Loops through lines and splits them
+            for line in lines:
+                splitline = line.split('-')
+                ele = splitline[0]
+                loc = splitline[1]
+                mass = loc.split()[0]
+                if ele not in nuclideDict.keys():
+                    nuclideDict[ele] = [mass]
+                else:
+                    if mass not in nuclideDict[ele]:
+                        nuclideDict[ele].append(mass)
+        total = 0
+        for nuclide in nuclideDict.keys():
+            total += len(nuclideDict[nuclide])
+            print(nuclide, nuclideDict[nuclide])
+        print("process nuclides size",total)
+        return nuclideDict
+
 
     def getElement(self, nuclideID):
         """
@@ -207,15 +238,27 @@ class ORIGENData:
         dfDaughter = self._offDiagionalPandasData.set_index('daughter').loc[
             daughterNuclideID]
         dfReaction = dfDaughter.set_index('parent').loc[parentNuclideID]
-        # If the reaction is not decay
-        if dfReaction['tid'] != -1:
-            return dfReaction['rx[barn]']*1.e-24*flux
+        # the parent daughter relation only has multiple reaction 
+        # mechanisims
+        if isinstance(dfReaction['tid'], Iterable):
+            rxnRate = 0.0
+            for rxnIndex, reactionID in enumerate(dfReaction['tid']):
+                rxn = dfReaction.iloc[rxnIndex]
+                # If the reaction is not decay.
+                if reactionID != -1:
+                    rxnRate += rxn['rx[barn]']*1.e-24*flux
+                else:
+                    # The reaction is decay
+                    rxnRate += rxn['rx[barn]']
+            return rxnRate
         else:
-            # The reaction is decay
-            return dfReaction['rx[barn]']
-        """
-        return dfReaction['rx[barn]']*1.e-24*flux
-        """
+            # If the reaction is not decay.
+            # The parent daughter relation only has one reaction 
+            if dfReaction['tid'] != -1:
+                return dfReaction['rx[barn]']*1.e-24*flux
+            else:
+                # The reaction is decay
+                return dfReaction['rx[barn]']
 
     def getReactionDaughters(self, parentNuclideID, tol=0.0):
         """
@@ -374,31 +417,4 @@ class ORIGENData:
 
         numpyNuclideOutput = np.asarray(nuclideInputList)
         return numpyNuclideOutput
-
-
-if __name__=="__main__":
-    diagDecayFile = sys.argv[1]
-    diagRxFile = sys.argv[2]
-    offDiagRxFile = sys.argv[3]
-    data = ORIGENData(diagDecayFile, diagRxFile, offDiagRxFile)
-
-    XeIDs = data.getNuclideOrigenIDs('Xe', 135, addG1=False)
-    IodineIDs = data.getNuclideOrigenIDs('I', 135, addG1=False)
-    OrigenIDs = [IodineIDs, XeIDs]
-    tempOrigenIDs = []
-    for IDs in OrigenIDs:
-        for ID in IDs:
-            tempOrigenIDs.append(ID)
-    OrigenIDs = tempOrigenIDs
-    print (XeIDs)
-    print (XeIDs)
-
-    for ID in OrigenIDs:
-        print('Nuclide', ID)
-        for parent in data.getReactionParents(ID):
-            if parent in OrigenIDs:
-                print('My parents are:', parent)
-        for daughter in data.getReactionDaughters(ID):
-            if daughter in OrigenIDs:
-                print('My daughters are:', daughter)
-        print ()
+        
