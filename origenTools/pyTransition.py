@@ -41,9 +41,10 @@ class transitionMatrix:
         @param fname    Location of the file
         """
         nuclideDict = self._dataObject.processNuclideList(fname)
+        #nuclideDict = self._dataObject.removeRedundentGroupd(nuclideDict)
         self.setProblemNuclides(nuclideDict)
 
-    def setProblemNuclides(self, nuclideDic):
+    def setProblemNuclides(self, nuclideDic, removeDublicateGroups=False):
         """
         Sets the nuclides to be in the transition matrix
 
@@ -58,7 +59,7 @@ class transitionMatrix:
             if massNumbers:
                 for massNumber in massNumbers:
                     IDs = self._dataObject.getNuclideOrigenIDs(atomicNumber, 
-                        massNumber)
+                        massNumber, addG1=False)
                     for ID in IDs:
                         nuclideIDs.append(ID)
             else:
@@ -66,7 +67,23 @@ class transitionMatrix:
                     massNumber)
                 for ID in IDs:
                     nuclideIDs.append(ID)
-        self._nuclides = np.asarray(nuclideIDs)
+
+        # Removes dublicate groups from the nuclide list. This part 
+        # is kinda sketchy right now. I haven't looked though the file
+        # to check if the reaction rates are the same for a nuclide in 
+        # different sub groups.
+        if removeDublicateGroups:
+            uniqueNuclides = []
+            uniqueNuclidesTemp = []
+            
+            for nuclide in nuclideIDs:
+                val = int(str(nuclide)[1:])
+                if val not in uniqueNuclidesTemp:
+                    uniqueNuclidesTemp.append(val)
+                    uniqueNuclides.append(nuclide)
+            self._nuclides = np.asarray(uniqueNuclides)
+        else:
+            self._nuclides = np.asarray(nuclideIDs)
 
     def buildTransitionMatrix(self, flux):
         """

@@ -120,11 +120,6 @@ class ORIGENData:
                 else:
                     if mass not in nuclideDict[ele]:
                         nuclideDict[ele].append(mass)
-        total = 0
-        for nuclide in nuclideDict.keys():
-            total += len(nuclideDict[nuclide])
-            print(nuclide, nuclideDict[nuclide])
-        print("process nuclides size",total)
         return nuclideDict
 
 

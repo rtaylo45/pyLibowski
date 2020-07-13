@@ -20,9 +20,6 @@ def unpackSolution(transObj, solDic, sol):
         #oldSol.append(sol[index])
         #newDic[nuclide] = oldSol
         newDic[nuclide].append(sol[index])
-    print()
-    print()
-    print()
     return newDic
 
 # Origen files
@@ -34,16 +31,24 @@ nuclideNames = "origenTools/data/baseCaseOrigen.txt"
 # Transition matrix object
 transition = transitionMatrix(diagDecayFile, diagRxFile, offDiagRxFile)
 
+nuclideDict = {'U': [235],
+               'Xe': ['135m', 135],
+               'I': [135]
+                }
 # Set the nuclides
-#transition.setProblemNuclidesFromFile(nuclideNames)
+#transition.setProblemNuclides(nuclideDict)
 transition.setProblemNuclidesFromFile(nuclideNames)
 nuclides = transition.getNuclides()
-print('transition nuclide size', len(nuclides))
 n0 = np.zeros((len(nuclides), 1))
-# initial condition of U 238
-n0[147] = 1e10
+#n0[:] = 1e20
+# initial condition of U 235
+for index, nuclideID in enumerate(nuclides):
+    isotopeName = transition.getNameFromID(nuclideID)
+    if isotopeName == 'U-235':
+        n0[index] = 1e10
+
 # Tend
-tend = 500*1000
+tend = 1000000
 steps = 100
 dt = tend/steps
 t = 0
@@ -53,6 +58,7 @@ solDic = OrderedDict()
 flux = 1.e13
 # builds the transition matrix
 matrix = transition.buildTransitionMatrix(flux)
+print(matrix)
 plt.spy(matrix)
 plt.show()
 
@@ -62,18 +68,18 @@ for step in range(steps):
     time.append(t)
         
     sol = apply(matrix, dt, n0)
-    print(sol)
     solDic = unpackSolution(transition, solDic, sol)
     n0 = sol
-
+time = np.asarray(time)
 # Loops through the soltuion to plot
 for nuclideID in solDic.keys():
     sol = solDic[nuclideID]
-    isotopeName = transition.getNameFromID(nuclideID)
-    plt.plot(time, sol, label=isotopeName)
+    if sol[-1] > 1.:
+        isotopeName = transition.getNameFromID(nuclideID)
+        plt.plot(time/60./60./24., sol, label=isotopeName)
 plt.grid()
-#plt.legend()
-plt.xlabel("Time [s]")
+plt.legend()
+plt.xlabel("Time [day]")
 plt.ylabel("Atomic number density")
 plt.yscale("log")
 plt.show()
