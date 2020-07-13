@@ -36,8 +36,8 @@ nuclideDict = {'U': [235],
                'I': [135]
                 }
 # Set the nuclides
-#transition.setProblemNuclides(nuclideDict)
-transition.setProblemNuclidesFromFile(nuclideNames)
+transition.setProblemNuclides(nuclideDict)
+#transition.setProblemNuclidesFromFile(nuclideNames)
 nuclides = transition.getNuclides()
 n0 = np.zeros((len(nuclides), 1))
 #n0[:] = 1e20
@@ -57,8 +57,14 @@ solDic = OrderedDict()
 # neutron flux
 flux = 1.e13
 # builds the transition matrix
-matrix = transition.buildTransitionMatrix(flux)
-print(matrix)
+#matrix = transition.buildTransitionMatrix(flux)
+
+transition.writeLibowskiSpeciesInputFile("speciesInputNamesSmall.txt")
+transition.writeLibowskiSpeciesReactionFile("speciesInputDecaySmall.txt", decayOnly=True)
+transition.writeLibowskiSpeciesReactionFile("speciesInputTransSmall.txt", transOnly=True)
+
+
+"""
 plt.spy(matrix)
 plt.show()
 
@@ -83,3 +89,4 @@ plt.xlabel("Time [day]")
 plt.ylabel("Atomic number density")
 plt.yscale("log")
 plt.show()
+"""

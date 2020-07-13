@@ -1,5 +1,6 @@
 # Data file with the origen transition matrix text files
 data/
+*.txt
 # swp files
 *.swp
 *-swp

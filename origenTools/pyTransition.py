@@ -71,7 +71,8 @@ class transitionMatrix:
         # Removes dublicate groups from the nuclide list. This part 
         # is kinda sketchy right now. I haven't looked though the file
         # to check if the reaction rates are the same for a nuclide in 
-        # different sub groups.
+        # different sub groups. 
+        # Need to remove this bullshit
         if removeDublicateGroups:
             uniqueNuclides = []
             uniqueNuclidesTemp = []
@@ -121,6 +122,74 @@ class transitionMatrix:
                     transMatrix[thisIndex, parentIndex] += coeff
 
         return transMatrix
+
+    def writeLibowskiSpeciesInputFile(self, fname):
+        """
+        Writes an input file used to set the species. 
+        Format example:
+            eAName  Mass[lbm/mol]   initial amount[mole]    diffusion coeff[ft^2/s]
+            u-235   235.0439        1.0                     0.0
+
+        @param fname    Name of file to write to
+        """
+        f = open(fname, "w")
+        f.write("Name   Mass[lbm/mol]   initial amount[mole]    diffusion coeff[ft^2/s]\n")
+        for nuclide in self._nuclides:
+            name = self._dataObject.convertIDtoEAmName(nuclide)
+            molarMass = str(self._dataObject.getMolarMass(nuclide))
+            initCon = str(0.0)
+            difCoeff = str(0.0)
+            decayConst = str(self._dataObject.getDecayConstant(nuclide))
+            string = name + '\t' + molarMass + '\t' + initCon + '\t' + difCoeff + '\n'
+            f.write(string)
+        f.close()
+
+    def writeLibowskiSpeciesReactionFile(self, fname, decayOnly=False, transOnly=False):
+        """
+        Writes an input file used to set reaction rates for speices in libowski. In
+        libowski the coefficient used for source terms are housed in a std::vector<double> 
+        of length numOfSpecies.
+
+        When writting this file it is assumed that the speices ID's in libowsk follow the 
+        order that they are from the writeLibowskiSpeciesInputFile function
+        """
+        f = open(fname, "w")
+        # builds the matrix index nuclide map. Not that the index needs to be the same 
+        # integer that is returned from the libowski add species function
+        matrixIndex_nuclide_map = OrderedDict()
+        for index, nuclide in enumerate(self._nuclides):
+            matrixIndex_nuclide_map[nuclide] = index
+        # Loops though nuclides
+        for nuclide in self._nuclides:
+            name = self._dataObject.convertIDtoEAmName(nuclide)
+            coeffVect = np.zeros((1,len(self._nuclides)))
+            # The decay constant 1/s
+            diagCoeff = self._dataObject.getDecayConstant(nuclide) 
+            thisIndex = matrixIndex_nuclide_map[nuclide]
+            if not transOnly:
+                coeffVect[0,thisIndex] += diagCoeff
+
+            # Loops over source terms from neutron induced reactions and
+            # decay. These are the off diagonal elements and will be possitive
+            for parent in self._dataObject.getReactionParents(nuclide):
+                # Loop over parent nuclides
+                if parent in self._nuclides:
+                    parentIndex = matrixIndex_nuclide_map[parent]
+                    # Gets the coefficient. 1/s
+                    coeff = self._dataObject.getReactionRate(parent, nuclide, 
+                        decayOnly=decayOnly, transOnly=transOnly)
+                    # Sets the coefficient
+                    coeffVect[0,parentIndex] += coeff
+            # the line string to write to the file
+            string = str(thisIndex) + '\t' + name + '\t'
+            # adds the coefficent to the string
+            for coeff in coeffVect.tolist():
+                string += str(coeff) + '\t'
+            string += '\n' 
+            f.write(string)
+        f.close()
+
+               
 
     def getNuclides(self):
         """
