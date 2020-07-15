@@ -133,7 +133,6 @@ class transitionMatrix:
         @param fname    Name of file to write to
         """
         f = open(fname, "w")
-        f.write("Name   Mass[lbm/mol]   initial amount[mole]    diffusion coeff[ft^2/s]\n")
         for nuclide in self._nuclides:
             name = self._dataObject.convertIDtoEAmName(nuclide)
             molarMass = str(self._dataObject.getMolarMass(nuclide))
@@ -167,7 +166,7 @@ class transitionMatrix:
             diagCoeff = self._dataObject.getDecayConstant(nuclide) 
             thisIndex = matrixIndex_nuclide_map[nuclide]
             if not transOnly:
-                coeffVect[0,thisIndex] += diagCoeff
+                coeffVect[0,thisIndex] += -diagCoeff
 
             # Loops over source terms from neutron induced reactions and
             # decay. These are the off diagonal elements and will be possitive
@@ -183,8 +182,9 @@ class transitionMatrix:
             # the line string to write to the file
             string = str(thisIndex) + '\t' + name + '\t'
             # adds the coefficent to the string
-            for coeff in coeffVect.tolist():
-                string += str(coeff) + '\t'
+            for index in range(coeffVect.shape[1]):
+                coeff = coeffVect[0,index]
+                string += np.str(coeff) + '\t'
             string += '\n' 
             f.write(string)
         f.close()

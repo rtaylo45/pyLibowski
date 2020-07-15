@@ -36,8 +36,8 @@ nuclideDict = {'U': [235],
                'I': [135]
                 }
 # Set the nuclides
-transition.setProblemNuclides(nuclideDict)
-#transition.setProblemNuclidesFromFile(nuclideNames)
+#transition.setProblemNuclides(nuclideDict)
+transition.setProblemNuclidesFromFile(nuclideNames)
 nuclides = transition.getNuclides()
 n0 = np.zeros((len(nuclides), 1))
 #n0[:] = 1e20
@@ -59,10 +59,13 @@ flux = 1.e13
 # builds the transition matrix
 #matrix = transition.buildTransitionMatrix(flux)
 
-transition.writeLibowskiSpeciesInputFile("speciesInputNamesSmall.txt")
-transition.writeLibowskiSpeciesReactionFile("speciesInputDecaySmall.txt", decayOnly=True)
-transition.writeLibowskiSpeciesReactionFile("speciesInputTransSmall.txt", transOnly=True)
+transition.writeLibowskiSpeciesInputFile("speciesInputNames.dat")
+transition.writeLibowskiSpeciesReactionFile("speciesInputDecay.dat", decayOnly=True)
+transition.writeLibowskiSpeciesReactionFile("speciesInputTrans.dat", transOnly=True)
 
+#transition.writeLibowskiSpeciesInputFile("speciesInputNamesSmall.txt")
+#transition.writeLibowskiSpeciesReactionFile("speciesInputDecaySmall.txt", decayOnly=True)
+#transition.writeLibowskiSpeciesReactionFile("speciesInputTransSmall.txt", transOnly=True)
 
 """
 plt.spy(matrix)
