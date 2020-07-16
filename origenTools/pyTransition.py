@@ -44,7 +44,7 @@ class transitionMatrix:
         #nuclideDict = self._dataObject.removeRedundentGroupd(nuclideDict)
         self.setProblemNuclides(nuclideDict)
 
-    def setProblemNuclides(self, nuclideDic, removeDublicateGroups=False):
+    def setProblemNuclides(self, nuclideDic, removeDublicateGroups=True):
         """
         Sets the nuclides to be in the transition matrix
 
@@ -59,7 +59,7 @@ class transitionMatrix:
             if massNumbers:
                 for massNumber in massNumbers:
                     IDs = self._dataObject.getNuclideOrigenIDs(atomicNumber, 
-                        massNumber, addG1=False)
+                        massNumber)
                     for ID in IDs:
                         nuclideIDs.append(ID)
             else:
@@ -75,13 +75,28 @@ class transitionMatrix:
         # Need to remove this bullshit
         if removeDublicateGroups:
             uniqueNuclides = []
-            uniqueNuclidesTemp = []
             
-            for nuclide in nuclideIDs:
-                val = int(str(nuclide)[1:])
-                if val not in uniqueNuclidesTemp:
-                    uniqueNuclidesTemp.append(val)
-                    uniqueNuclides.append(nuclide)
+            for thisNuclide in nuclideIDs:
+                thisGroupID = self._dataObject.getSubGroup(thisNuclide)
+                thisVal = int(str(thisNuclide)[1:])
+                candidateNuclide = thisNuclide
+                dublicateFound = False
+                tempDublicateNuclides = []
+                for otherNuclide in nuclideIDs:
+                    if thisNuclide == otherNuclide:
+                        pass
+                    else:
+                        otherGroupID = self._dataObject.getSubGroup(otherNuclide)
+                        otherVal = int(str(otherNuclide)[1:])
+                        if thisVal == otherVal:
+                            dublicateFound = True
+                            tempDublicateNuclides.append(otherNuclide)
+                if not dublicateFound:
+                    uniqueNuclides.append(candidateNuclide)
+                else:
+                    if thisGroupID == 3 and dublicateFound:
+                        uniqueNuclides.append(candidateNuclide)
+
             self._nuclides = np.asarray(uniqueNuclides)
         else:
             self._nuclides = np.asarray(nuclideIDs)
