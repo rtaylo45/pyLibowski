@@ -203,7 +203,20 @@ class ORIGENData:
         lambda_ = data.at[nuclideID,'decay[1/s]']
         return lambda_
 
-    def getReactionRemovalRate(self, nuclideID, flux):
+    def getMolarMass(self, nuclideID):
+        """
+        Gets the molar mass
+
+        @param nuclideID    Nuclide ID based on Origen indexing
+
+        @return mm          Molar mass [g/mol]
+        """
+        assert(len(str(nuclideID))==8)
+        data = self._diagionalPandasData.set_index('nuclide')
+        mm = data.at[nuclideID,'mass[g/mol]']
+        return mm
+
+    def getReactionRemovalRate(self, nuclideID, flux=1.0):
         """
         Gets the reaction removal rate in barns
 
@@ -218,7 +231,8 @@ class ORIGENData:
         rxRate = data.at[nuclideID,'rx[barn]']
         return rxRate*1.e-24*flux
 
-    def getReactionRate(self, parentNuclideID, daughterNuclideID, flux):
+    def getReactionRate(self, parentNuclideID, daughterNuclideID, flux=1.0, decayOnly=False,
+            transOnly=False):
         """
         Gets the reaction rate in barns from parent nuclide
         to daughter nuclide
@@ -226,6 +240,9 @@ class ORIGENData:
         @param parentNuclideID      Parent nuclide ID
         @param daughterNuclideID    Daughter nuclide ID
         @param flux                 Neutron flux in 1/cm^2/s
+        @param decayOnly            Logical set to true if the user only wants decay reactions
+        #param transmuationOnly     Logical set to tru if the user only wants transmutation
+                                    reactions
 
         @return rxRate              Reaction rate from parent nuclide to
                                     daughter nuclide in 1/s
@@ -241,19 +258,33 @@ class ORIGENData:
                 rxn = dfReaction.iloc[rxnIndex]
                 # If the reaction is not decay.
                 if reactionID != -1:
-                    rxnRate += rxn['rx[barn]']*1.e-24*flux
+                    if decayOnly:
+                        rxnRate += 0.0
+                    else:
+                        rxnRate += rxn['rx[barn]']*1.e-24*flux
                 else:
-                    # The reaction is decay
-                    rxnRate += rxn['rx[barn]']
+                    if transOnly:
+                        rxnRate += 0.0
+                    else:
+                        # The reaction is decay
+                        rxnRate += rxn['rx[barn]']
             return rxnRate
         else:
+            rxnRate = 0.0
             # If the reaction is not decay.
             # The parent daughter relation only has one reaction 
             if dfReaction['tid'] != -1:
-                return dfReaction['rx[barn]']*1.e-24*flux
+                if decayOnly:
+                    rxnRate = 0.0
+                else:
+                    rxnRate = dfReaction['rx[barn]']*1.e-24*flux
             else:
                 # The reaction is decay
-                return dfReaction['rx[barn]']
+                if transOnly:
+                    rxnRate = 0.0
+                else:
+                    rxnRate = dfReaction['rx[barn]']
+            return rxnRate
 
     def getReactionDaughters(self, parentNuclideID, tol=0.0):
         """
