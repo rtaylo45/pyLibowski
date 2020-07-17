@@ -3,6 +3,7 @@ from matexp.CRAM import apply
 import numpy as np
 import numpy.linalg as LA
 import matplotlib.pyplot as plt
+import sys
 from collections import OrderedDict
 
 def unpackSolution(transObj, solDic, sol):
@@ -26,7 +27,7 @@ def unpackSolution(transObj, solDic, sol):
 diagDecayFile = "origenTools/data/diag-dec.txt"
 diagRxFile = "origenTools/data/diag-rx.txt"
 offDiagRxFile = "origenTools/data/offdiag.txt"
-nuclideNames = "origenTools/data/baseCaseOrigen.txt"
+nuclideNames = sys.argv[1]
 
 # Transition matrix object
 transition = transitionMatrix(diagDecayFile, diagRxFile, offDiagRxFile)
