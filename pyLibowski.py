@@ -28,69 +28,26 @@ diagDecayFile = "origenTools/data/diag-dec.txt"
 diagRxFile = "origenTools/data/diag-rx.txt"
 offDiagRxFile = "origenTools/data/offdiag.txt"
 nuclideNames = sys.argv[1]
+# file base name
+#fbaseName = sys.argv[2]
+fbaseName = "moleProblems"
 
 # Transition matrix object
 transition = transitionMatrix(diagDecayFile, diagRxFile, offDiagRxFile)
 
-nuclideDict = {'U': [235],
-               'Xe': ['135m', 135],
-               'I': [135]
+
+nuclideDict = {'U': [233, 234, 235, 236, 237, 238, 239],
+               'Pu':[239],
+               'Np':[239],
                 }
 # Set the nuclides
-#transition.setProblemNuclides(nuclideDict)
-transition.setProblemNuclidesFromFile(nuclideNames)
-nuclides = transition.getNuclides()
-n0 = np.zeros((len(nuclides), 1))
-#n0[:] = 1e20
-# initial condition of U 235
-for index, nuclideID in enumerate(nuclides):
-    isotopeName = transition.getNameFromID(nuclideID)
-    if isotopeName == 'U-235':
-        n0[index] = 1e10
+transition.setProblemNuclides(nuclideDict)
+#transition.setProblemNuclidesFromFile(nuclideNames)
 
-# Tend
-tend = 1000000
-steps = 100
-dt = tend/steps
-t = 0
-time = []
-solDic = OrderedDict()
-# neutron flux
-flux = 1.e13
-# builds the transition matrix
-#matrix = transition.buildTransitionMatrix(flux)
+# Writes out the files
+#transition.writeLibowskiSpeciesInputFile(fbaseName+"SpeciesInputNames.dat")
+#transition.writeLibowskiSpeciesReactionFile(fbaseName+"SpeciesInputDecay.dat", decayOnly=True)
+#transition.writeLibowskiSpeciesReactionFile(fbaseName+"speciesInputTrans.dat", transOnly=True)
 
-transition.writeLibowskiSpeciesInputFile("speciesInputNames.dat")
-transition.writeLibowskiSpeciesReactionFile("speciesInputDecay.dat", decayOnly=True)
-transition.writeLibowskiSpeciesReactionFile("speciesInputTrans.dat", transOnly=True)
-
-#transition.writeLibowskiSpeciesInputFile("speciesInputNamesSmall.txt")
-#transition.writeLibowskiSpeciesReactionFile("speciesInputDecaySmall.txt", decayOnly=True)
-#transition.writeLibowskiSpeciesReactionFile("speciesInputTransSmall.txt", transOnly=True)
-
-"""
-plt.spy(matrix)
-plt.show()
-
-# Runs the problem
-for step in range(steps):
-    t = t+dt
-    time.append(t)
-        
-    sol = apply(matrix, dt, n0)
-    solDic = unpackSolution(transition, solDic, sol)
-    n0 = sol
-time = np.asarray(time)
-# Loops through the soltuion to plot
-for nuclideID in solDic.keys():
-    sol = solDic[nuclideID]
-    if sol[-1] > 1.:
-        isotopeName = transition.getNameFromID(nuclideID)
-        plt.plot(time/60./60./24., sol, label=isotopeName)
-plt.grid()
-plt.legend()
-plt.xlabel("Time [day]")
-plt.ylabel("Atomic number density")
-plt.yscale("log")
-plt.show()
-"""
+transMatrix = transition.buildTransitionMatrix(1.e13)
+print(transMatrix)

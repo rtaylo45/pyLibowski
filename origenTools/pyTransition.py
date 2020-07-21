@@ -41,7 +41,6 @@ class transitionMatrix:
         @param fname    Location of the file
         """
         nuclideDict = self._dataObject.processNuclideList(fname)
-        #nuclideDict = self._dataObject.removeRedundentGroupd(nuclideDict)
         self.setProblemNuclides(nuclideDict)
 
     def setProblemNuclides(self, nuclideDic, removeDublicateGroups=False):
