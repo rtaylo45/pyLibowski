@@ -43,7 +43,7 @@ class transitionMatrix:
         nuclideDict = self._dataObject.processNuclideList(fname)
         self.setProblemNuclides(nuclideDict)
 
-    def setProblemNuclides(self, nuclideDic, removeDublicateGroups=False):
+    def setProblemNuclides(self, nuclideDic, removeDublicateGroups=True):
         """
         Sets the nuclides to be in the transition matrix
 
@@ -58,7 +58,7 @@ class transitionMatrix:
             if massNumbers:
                 for massNumber in massNumbers:
                     IDs = self._dataObject.getNuclideOrigenIDs(atomicNumber, 
-                        massNumber, addG1=False)
+                        massNumber)
                     for ID in IDs:
                         nuclideIDs.append(ID)
             else:
