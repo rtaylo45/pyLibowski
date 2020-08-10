@@ -2,6 +2,7 @@
 data/
 *.dat
 *.txt
+*.png
 # swp files
 *.swp
 *-swp
