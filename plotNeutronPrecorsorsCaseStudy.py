@@ -7,13 +7,29 @@ import seaborn as sns; sns.set()
 from dataReaders.reader import read2Ddata, convertTo2Dgrid
 from analytics.pyAnalytics import computeErrors
 import matplotlib.animation as animation
+fname = sys.argv[1]
+data = read2Ddata(fname)
+
+def getGroupMaxValues(data):
+    solver = list(data.keys())[0]
+    solverData = data[solver]
+    gMaxs = [-1e10, -1e10, -1e10, -1e10, -1e10, -1e10]
+    for time in solverData.keys():
+        timeStepData = solverData[time]
+        for group in range(2, 8):
+            g = timeStepData[:,group]
+            for groupValue in g:
+                #print(time, group-2, gMaxs[group-2], groupValue)
+                gMaxs[group-2] = max(gMaxs[group-2], groupValue) 
+
+    return gMaxs
+
+groupMaxs = getGroupMaxValues(data)
 
 def animate(i):
-    fname = "caseStudyNeutronPrecursors.out"
-    data = read2Ddata(fname)
     solver = "hyperbolic"
     solverData = data[solver]
-    group = 3
+    group = 1
     time = list(solverData.keys())[i]
     return makeHeatMap(solverData, solver, time, group+1)
 
@@ -30,7 +46,7 @@ def makeHeatMap(solverData, solver, time, group):
     g = timeStepData[:,group]
     TwoDdata = convertTo2Dgrid(25, 50, g)
     heatmap = sns.heatmap(TwoDdata, cmap='viridis', xticklabels=xticks,
-        yticklabels=yticks)
+        yticklabels=yticks, cbar=False)
     plt.title(solver+" time = "+time+" Group: "+str(group-1))
     return heatmap
 
@@ -46,12 +62,12 @@ def plotHeatMap(data):
             xUnique = np.unique(x)
             yUnique = np.flip(np.unique(y))
             X, Y = np.meshgrid(xUnique,yUnique)
-            xticks = np.empty(5, dtype=object)
-            yticks = np.empty(20, dtype=object)
+            xticks = np.empty(25, dtype=object)
+            yticks = np.empty(50, dtype=object)
             #xticks[0], xticks[24], xticks[49] = '0', '25', '50'
             for group in range(4, 5):
                 g = timeStepData[:,group]
-                TwoDdata = convertTo2Dgrid(5, 20, g)
+                TwoDdata = convertTo2Dgrid(25, 50, g)
                 #fig = plt.figure()
                 #ax = plt.axes(projection='3d')
                 #ax.plot_surface(X, Y, TwoDdata, rstride=1, cstride=1,
@@ -104,17 +120,19 @@ def plotSingleStepMatlabError(dataFolder):
     plt.legend()
     plt.title('Single Step Solver Error')
     plt.show()
+
         
 
 if __name__ == "__main__":
     fig = plt.figure()
-    fname = sys.argv[1]
-    data = read2Ddata(fname)
-    plotHeatMap(data)
+    #groupMaxs = getGroupMaxValues(data)
+    #plotHeatMap(data)
+    frames = [i for i in range(50)]
 
     # Set up formatting for the movie files
-    #Writer = animation.writers['ffmpeg']
-    #writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
-    #anim = animation.FuncAnimation(fig, animate, frames=5,
-    #                          interval=100, blit = True)
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+    anim = animation.FuncAnimation(fig, animate, frames=frames,
+                              interval=200)
+    plt.show()
     #anim.save('test.mp4', writer = writer)
