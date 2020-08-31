@@ -53,3 +53,93 @@ class computeErrors:
                         max_ = max(relativeError, max_)
             maxRelError.append(max_)
         return np.asarray(maxRelError)
+
+    @staticmethod
+    def computeMaxAbsError(anaSolution, approxSolution):
+        assert(anaSolution.shape == approxSolution.shape)
+        maxAbsError = []
+        # Loop though columns
+        for col in range(anaSolution.shape[1]):
+            # Loop though spec concentrations
+            max_ = 0.0
+            for specID in range(anaSolution.shape[0]):
+                ana = anaSolution[specID, col]
+                approx = approxSolution[specID, col]
+                if ana != 0.0:
+                    absError = abs(ana-approx)
+                    if absError != 1.0:
+                        max_ = max(absError, max_)
+            maxAbsError.append(max_)
+        return np.asarray(maxAbsError)
+
+    @staticmethod
+    def computel1AbsError(anaSolution, approxSolution):
+        assert(anaSolution.shape == approxSolution.shape)
+        l1Errors = []
+        # Loop though columns
+        for col in range(anaSolution.shape[1]):
+            # Loop though spec concentrations
+            N = anaSolution.shape[0]
+            l1Error = 0.0
+            for specID in range(N):
+                ana = anaSolution[specID, col]
+                approx = approxSolution[specID, col]
+                if ana != 0.0:
+                    absError = abs(ana-approx)
+                    l1Error += absError
+            l1Errors.append(l1Error/N)
+        return np.asarray(l1Errors)
+
+    @staticmethod
+    def computel2AbsError(anaSolution, approxSolution):
+        assert(anaSolution.shape == approxSolution.shape)
+        l2Errors = []
+        # Loop though columns
+        for col in range(anaSolution.shape[1]):
+            # Loop though spec concentrations
+            N = anaSolution.shape[0]
+            l2Error = 0.0
+            for specID in range(N):
+                ana = anaSolution[specID, col]
+                approx = approxSolution[specID, col]
+                if ana != 0.0:
+                    absError = abs(ana-approx)
+                    l2Error += absError**2.
+            l2Errors.append(l2Error/N)
+        return np.asarray(l2Errors)
+
+    @staticmethod
+    def computel1RelError(anaSolution, approxSolution):
+        assert(anaSolution.shape == approxSolution.shape)
+        l1Errors = []
+        # Loop though columns
+        for col in range(anaSolution.shape[1]):
+            # Loop though spec concentrations
+            N = anaSolution.shape[0]
+            l1Error = 0.0
+            for specID in range(N):
+                ana = anaSolution[specID, col]
+                approx = approxSolution[specID, col]
+                if ana != 0.0:
+                    absError = abs(ana-approx)/ana
+                    l1Error += absError
+            l1Errors.append(l1Error/N)
+        return np.asarray(l1Errors)
+
+    @staticmethod
+    def computel2RelError(anaSolution, approxSolution):
+        assert(anaSolution.shape == approxSolution.shape)
+        l2Errors = []
+        # Loop though columns
+        for col in range(anaSolution.shape[1]):
+            # Loop though spec concentrations
+            N = anaSolution.shape[0]
+            l2Error = 0.0
+            for specID in range(N):
+                ana = anaSolution[specID, col]
+                approx = approxSolution[specID, col]
+                if ana != 0.0:
+                    absError = abs(ana-approx)/ana
+                    l2Error += absError**2.
+            l2Errors.append(l2Error/N)
+        return np.asarray(l2Errors)
