@@ -28,9 +28,6 @@ diagDecayFile = "origenTools/data/diag-dec.txt"
 diagRxFile = "origenTools/data/diag-rx.txt"
 offDiagRxFile = "origenTools/data/offdiag.txt"
 nuclideNames = sys.argv[1]
-# file base name
-#fbaseName = sys.argv[2]
-fbaseName = "moleProblems"
 
 # Transition matrix object
 transition = transitionMatrix(diagDecayFile, diagRxFile, offDiagRxFile)
@@ -54,5 +51,7 @@ transition.writeLibowskiSpeciesInputFile("speciesInputNames.dat")
 transition.writeLibowskiSpeciesReactionFile("speciesInputDecay.dat", decayOnly=True)
 transition.writeLibowskiSpeciesReactionFile("speciesInputTrans.dat", transOnly=True)
 
-#transMatrix = transition.buildTransitionMatrix(1.e13)
+transMatrix = transition.buildTransitionMatrix(1.e13)
+plt.spy(transMatrix)
+plt.show()
 #print(transMatrix)

@@ -41,7 +41,7 @@ class transitionMatrix:
         @param fname    Location of the file
         """
         nuclideDict = self._dataObject.processNuclideList(fname)
-        self.setProblemNuclides(nuclideDict)
+        self.setProblemNuclides(nuclideDict, False)
 
     def setProblemNuclides(self, nuclideDic, removeDublicateGroups=True):
         """
