@@ -96,9 +96,13 @@ class transitionMatrix:
                     if thisGroupID == 3 and dublicateFound:
                         uniqueNuclides.append(candidateNuclide)
 
-            self._nuclides = np.asarray(uniqueNuclides)
+            uniqueNuclides = np.asarray(uniqueNuclides)
+            self._nuclides = uniqueNuclides
+            np.savetxt('uniqueNuclides.txt', uniqueNuclides, fmt='%8i')
         else:
-            self._nuclides = np.asarray(nuclideIDs)
+            nuclideIDs = np.asarray(nuclideIDs)
+            self._nuclides = nuclideIDs
+            np.savetxt('nuclides.txt', nuclideIDs, fmt='%8i')
 
     def buildTransitionMatrix(self, flux):
         """
