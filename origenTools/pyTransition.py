@@ -20,6 +20,8 @@ class transitionMatrix:
     # Numpy array of nuclide IDs that will be used to build the transition 
     # matrix
     _nuclides = None
+    # numpy array of nuclide phase indices 0 = liquid; 1 = gas; 2 = wall
+    _phase = None
 
     """
     Class Methods
@@ -33,6 +35,64 @@ class transitionMatrix:
         @param offDiagRxFname   File path for off diagional rx file
         """
         self._dataObject = ORIGENData(diagDecayFname, diagRxFname, offDiagRxFname)
+
+    def _orderIDs(self, nuclideIDs, phases = np.empty(0)):
+        """
+        Order the nuclide IDs based on their ZAI index
+        
+        @param  nuclideIDs   Array of nuclide IDs
+        @return oIDs         Ordered IDs
+        """
+        # Get ZAI IDs 
+        ZAIs = self._dataObject.getZAI(nuclideIDs)
+        if phases.size != 0:
+            # Creates array that combines both columns
+            array = np.c_[nuclideIDs, ZAIs, phases]
+            # sorts the array based on the ZAIs
+            array = array[np.argsort(array[:, 1])]
+            # Gets the nuclide IDs to set. Ordered by the ZAIs
+            oIDs = array[:,0]
+            oPhases = array[:,2]
+            return oIDs, oPhases
+        else:
+            # Creates array that combines both columns
+            array = np.c_[nuclideIDs, ZAIs]
+            # sorts the array based on the ZAIs
+            array = array[np.argsort(array[:, 1])]
+            # Gets the nuclide IDs to set. Ordered by the ZAIs
+            oIDs = array[:,0]
+            return oIDs
+
+    def _convertPhaseIndexToPhaseName(self, index):
+        """
+        Converts the phase index to a string name that will be added to the
+        end of a nuclide name
+        """
+        assert(index <= 2 and index >= 0)
+        name = "None"
+        if index == 0:
+            name = "Liq"
+        elif index == 1:
+            name = "Gas"
+        elif index == 2:
+            name = "Wall"
+        return name
+
+    def setProblemNuclidesFromExistingArray(self, fname):
+        """
+        Sets the nuclides from an exsiting file that already has the 
+        nuclides in the ORIGEN nuclide format
+
+        @param fname    Location of the file
+        """
+        array = np.loadtxt(fname, dtype=np.int64)
+
+        nuclideIDs, phases = array[:,0], array[:,1]
+
+        nuclideIDs, phases = self._orderIDs(nuclideIDs, phases)
+
+        self._nuclides = nuclideIDs
+        self._phases = phases
 
     def setProblemNuclidesFromFile(self, fname):
         """
@@ -96,11 +156,11 @@ class transitionMatrix:
                     if thisGroupID == 3 and dublicateFound:
                         uniqueNuclides.append(candidateNuclide)
 
-            uniqueNuclides = np.asarray(uniqueNuclides)
-            self._nuclides = uniqueNuclides
+            uniqueNuclides = self._orderIDs(np.asarray(uniqueNuclides))
+            self._nuclides = self._orderIDs(uniqueNuclides)
             np.savetxt('uniqueNuclides.txt', uniqueNuclides, fmt='%8i')
         else:
-            nuclideIDs = np.asarray(nuclideIDs)
+            nuclideIDs = self._orderIDs(np.asarray(nuclideIDs))
             self._nuclides = nuclideIDs
             np.savetxt('nuclides.txt', nuclideIDs, fmt='%8i')
 
@@ -115,11 +175,14 @@ class transitionMatrix:
         # builds the matrix index nuclide map
         matrixIndex_nuclide_map = OrderedDict()
         for index, nuclide in enumerate(self._nuclides):
-            matrixIndex_nuclide_map[nuclide] = index
-
+            phaseName = self._convertPhaseIndexToPhaseName(self._phases[index])
+            name = self._dataObject.convertIDtoEAmName(nuclide) + phaseName
+            matrixIndex_nuclide_map[name] = index
         # Loops though to build the transition matrix
-        for nuclide in self._nuclides:
-            thisIndex = matrixIndex_nuclide_map[nuclide]
+        for index, nuclide in enumerate(self._nuclides):
+            thisPhaseName = self._convertPhaseIndexToPhaseName(self._phases[index])
+            thisName = self._dataObject.convertIDtoEAmName(nuclide) + thisPhaseName
+            thisIndex = matrixIndex_nuclide_map[thisName]
 
             # The decay constant 1/s
             diagCoeff = self._dataObject.getDecayConstant(nuclide) 
@@ -130,10 +193,12 @@ class transitionMatrix:
            
             # Loops over source terms from neutron induced reactions and
             # decay. These are the off diagonal elements and will be possitive
-            for parent in self._dataObject.getReactionParents(nuclide):
+            for pIndex, parent in enumerate(self._nuclides):
+                parentPhaseName = self._convertPhaseIndexToPhaseName(self._phases[pIndex])
+                parentName = self._dataObject.convertIDtoEAmName(parent) + parentPhaseName
                 # Loop over parent nuclides
-                if parent in self._nuclides:
-                    parentIndex = matrixIndex_nuclide_map[parent]
+                if parent in self._dataObject.getReactionParents(nuclide) and thisPhaseName == parentPhaseName:
+                    parentIndex = matrixIndex_nuclide_map[parentName]
                     # Gets the coefficient. 1/s
                     coeff = self._dataObject.getReactionRate(parent, nuclide, flux)
                     # Sets the coefficient
@@ -151,13 +216,14 @@ class transitionMatrix:
         @param fname    Name of file to write to
         """
         f = open(fname, "w")
-        for nuclide in self._nuclides:
-            name = self._dataObject.convertIDtoEAmName(nuclide)
+        for index, nuclide in enumerate(self._nuclides):
+            phaseName = self._convertPhaseIndexToPhaseName(self._phases[index])
+            name = self._dataObject.convertIDtoEAmName(nuclide) + phaseName
             molarMass = str(self._dataObject.getMolarMass(nuclide))
             initCon = str(0.0)
             difCoeff = str(0.0)
             decayConst = str(self._dataObject.getDecayConstant(nuclide))
-            string = name + '\t' + molarMass + '\t' + initCon + '\t' + difCoeff + '\n'
+            string = name + '\t\t\t' + molarMass + '\t\t\t' + initCon + '\t\t\t' + difCoeff + '\n'
             f.write(string)
         f.close()
 
@@ -175,30 +241,38 @@ class transitionMatrix:
         # integer that is returned from the libowski add species function
         matrixIndex_nuclide_map = OrderedDict()
         for index, nuclide in enumerate(self._nuclides):
-            matrixIndex_nuclide_map[nuclide] = index
+            phaseName = self._convertPhaseIndexToPhaseName(self._phases[index])
+            name = self._dataObject.convertIDtoEAmName(nuclide) + phaseName
+            matrixIndex_nuclide_map[name] = index
         # Loops though nuclides
-        for nuclide in self._nuclides:
-            name = self._dataObject.convertIDtoEAmName(nuclide)
+        for thisIndex, nuclide in enumerate(self._nuclides):
+            thisPhaseName = self._convertPhaseIndexToPhaseName(self._phases[thisIndex])
+            thisName = self._dataObject.convertIDtoEAmName(nuclide) + thisPhaseName
+            thisMM = self._dataObject.getMolarMass(nuclide)
             coeffVect = np.zeros((1,len(self._nuclides)))
             # The decay constant 1/s
             diagCoeff = self._dataObject.getDecayConstant(nuclide) 
-            thisIndex = matrixIndex_nuclide_map[nuclide]
+            thisIndex = matrixIndex_nuclide_map[thisName]
             if not transOnly:
                 coeffVect[0,thisIndex] += -diagCoeff
 
             # Loops over source terms from neutron induced reactions and
             # decay. These are the off diagonal elements and will be possitive
-            for parent in self._dataObject.getReactionParents(nuclide):
+            for pIndex, parent in enumerate(self._nuclides):
+                parentPhaseName = self._convertPhaseIndexToPhaseName(self._phases[pIndex])
+                parentName = self._dataObject.convertIDtoEAmName(parent) + parentPhaseName
+                parentMM = self._dataObject.getMolarMass(parent)
                 # Loop over parent nuclides
-                if parent in self._nuclides:
-                    parentIndex = matrixIndex_nuclide_map[parent]
+                if parent in self._dataObject.getReactionParents(nuclide) and thisPhaseName == parentPhaseName:
+                    parentIndex = matrixIndex_nuclide_map[parentName]
                     # Gets the coefficient. 1/s
-                    coeff = self._dataObject.getReactionRate(parent, nuclide, 
+                    MMratio = thisMM/parentMM
+                    coeff = MMratio*self._dataObject.getReactionRate(parent, nuclide, 
                         decayOnly=decayOnly, transOnly=transOnly)
                     # Sets the coefficient
                     coeffVect[0,parentIndex] += coeff
             # the line string to write to the file
-            string = str(thisIndex) + '\t' + name + '\t'
+            string = str(thisIndex) + '\t' + thisName + '\t'
             # adds the coefficent to the string
             for index in range(coeffVect.shape[1]):
                 coeff = coeffVect[0,index]

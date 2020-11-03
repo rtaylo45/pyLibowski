@@ -113,6 +113,33 @@ class ORIGENData:
                         nuclideDict[ele].append(mass)
         return nuclideDict
 
+    def getZAI(self, nuclideIDs):
+        """
+        Converts the IZZZAAA Origen index to ZAI index defined by
+
+        ZAI = 10,000*Z + 10*A + I
+
+        Can accept single ID or a np array maybe list?
+
+        @param nuclideID    Nuclide ID based on Origen indexing
+        @return ZAI         Array or integer of the converted
+                            IZZZAAA ID to ZAI
+        """
+        if isinstance(nuclideIDs, Iterable):
+            ZAIs = []
+            for nuclideID in nuclideIDs:
+                Z = self.getElement(nuclideID)
+                A = self.getMassNumber(nuclideID)
+                I = self.getIsomericState(nuclideID)
+                ZAI = 10000*Z + 10*A + I
+                ZAIs.append(ZAI)
+            return np.asarray(ZAIs, dtype=np.int64)
+        else:
+            Z = self.getElement(nuclideIDs)
+            A = self.getMassNumber(nuclideIDs)
+            I = self.getIsomericState(nuclideIDs)
+            ZAI = 10000*Z + 10*A + I
+            return np.int(ZAI)
 
     def getElement(self, nuclideID):
         """
@@ -142,17 +169,28 @@ class ORIGENData:
 
         return np.int(massID)
 
+    def getIsomericState(self, nuclideID):
+        """
+        Returns the metastable ID
+
+        @param nuclideID    Nuclide ID based on Origen indexing
+        @return             Isomeric state ID
+        """
+        # convert to string to pluck out the atomic number easier
+        nuclideIDstr = str(nuclideID)
+        assert(len(nuclideIDstr)==8)
+        # gets the isometric state
+        metastableID = int(nuclideIDstr[1])
+
+        return np.int(metastableID)
+
     def isMetastable(self, nuclideID):
         """
         Returns true if the nuclide ID is for a metastable nuclide
         @param nuclideID    Nuclide ID based on Origen indexing
         @return logic       Logical for the metastable nuclide
         """
-        # convert to string to pluck out the atomic number easier
-        nuclideIDstr = str(nuclideID)
-        assert(len(nuclideIDstr)==8)
-        # gets the subgroup number
-        metastableID = int(nuclideIDstr[1])
+        metastableID = self.getIsomericState(nuclideID)
 
         if (metastableID == 0):
             return False

@@ -1,6 +1,6 @@
-from mpl_toolkits import mplot3d
-import matplotlib
-matplotlib.use("Agg")
+#from mpl_toolkits import mplot3d
+#import matplotlib
+#matplotlib.use("TkAgg")
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -9,9 +9,9 @@ import sys
 from dataReaders.reader import read2Ddata, convertTo2Dgrid
 from analytics.pyAnalytics import computeErrors
 from plottingTools.plotter import make2DGIF
-import matplotlib.animation as animation
-fname = sys.argv[1]
-data = read2Ddata(fname)
+#import matplotlib.animation as animation
+#fname = sys.argv[1]
+#data = read2Ddata(fname)
 
 def getGroupMaxValues(data):
     solver = list(data.keys())[0]
@@ -27,7 +27,7 @@ def getGroupMaxValues(data):
 
     return gMaxs
 
-maxVals = getGroupMaxValues(data)
+#maxVals = getGroupMaxValues(data)
 
 def animate(i):
     solver = "hyperbolic"
@@ -124,9 +124,10 @@ def plotHeatMap(data):
             #plt.show()
             plt.savefig('neutronPrecursors60sec.png')
 
-def plotSingleStepMatlabError():
+def plotSingleStepMatlabErrorSingleImags():
     cwd = os.getcwd()
-    dataFolder = cwd+'/results/caseStudyNeutronPrecorsors/velocity25/10secondruns'
+    imgDir = cwd + '/imags/single/'
+    dataFolder = cwd+'/results/caseStudyNeutronPrecorsors/velocity60/10secondruns'
     dataFoldertemp = cwd+'/results/caseStudyNeutronPrecorsors/velocity60/10secondruns'
     fileBaseName = "caseStudyNeutronprecursors"
     substeps = [0, 2, 4, 6, 8, 10, 12]
@@ -138,6 +139,7 @@ def plotSingleStepMatlabError():
     dirs = [dataFolder, dataFoldertemp]
     folderNames = ['velocity 25', 'velocity 60']
 
+    """
     # Plots the errors for velocity 25 and 60 for the first time step
     for solver in cauchy:
         for folderIndex, folder in enumerate(dirs):
@@ -157,7 +159,7 @@ def plotSingleStepMatlabError():
         plt.xlabel('Substeps')
         plt.legend()
         plt.title(solver)
-        plt.savefig(solver+'velocity25vsvelocity60.png')
+        plt.savefig(imgDir+solver+'velocity25vsvelocity60.png')
         plt.close()
     """
     # change working directroy
@@ -179,7 +181,7 @@ def plotSingleStepMatlabError():
     plt.ylabel('RMSE')
     plt.xlabel('Substeps')
     plt.legend()
-    plt.savefig('velocity60steps10step1.png')
+    #plt.savefig(imgDir+'velocity25steps10step1.png')
     plt.close()
 
 
@@ -189,7 +191,7 @@ def plotSingleStepMatlabError():
         for substep in substeps:
             fnamecram = fileBaseName+solver+'Substeps'+str(substep)+'.csv'
             approxSol = np.genfromtxt(fnamecram, delimiter=',')
-            l1ErrorArray = computeErrors.computeRMSE(solution, approxSol)
+            l1ErrorArray = computeErrors.computeMaxRelError(solution, approxSol)
             plt.scatter(times, l1ErrorArray, label='Substeps = '+str(substep))
         plt.grid()
         plt.yscale('log')
@@ -197,7 +199,7 @@ def plotSingleStepMatlabError():
         plt.xlabel('Time (sec)')
         plt.legend()
         plt.title(solver)
-        plt.savefig(solver+'velocity60steps10.png')
+        #plt.savefig(imgDir+solver+'velocity25steps10.png')
         plt.close()
 
     # Plots all solvers on one figure 
@@ -212,12 +214,150 @@ def plotSingleStepMatlabError():
         plt.scatter(times, l1ErrorArray, label=solver)
     plt.grid()
     plt.yscale('log')
-    plt.ylabel('RMSE')
+    plt.ylabel('Relative $l_{\infty}$ Error')
     plt.xlabel('Time (sec)')
     plt.legend()
-    plt.savefig('velocity60steps10.png')
+    plt.savefig(imgDir+'velocity60steps10.png')
+    plt.close()
+
+def plotSingleStepMatlabErrorPaperImags():
+    cwd = os.getcwd()
+    imgDir = cwd + '/imags/paper/'
+    dataFolder = cwd+'/results/caseStudyNeutronPrecorsors/velocity25/10secondruns'
+    dataFoldertemp = cwd+'/results/caseStudyNeutronPrecorsors/velocity60/10secondruns'
+    fileBaseName = "caseStudyNeutronprecursors"
+    substeps = [0, 2, 4, 6, 8, 10, 12]
+    solvers = ['CRAM', 'parabolic', 'hyperbolic', 'pade-method1',
+        'pade-method2', 'taylor']
+    cauchy = ['CRAM', 'parabolic', 'hyperbolic']
+    times = [i for i in range(1,61)]
+    times = [10, 20, 30, 40, 50, 60]
+    dirs = [dataFolder, dataFoldertemp]
+    folderNames = ['velocity 25', 'velocity 60']
+
+    """
+    # Plots the errors for velocity 25 and 60 for the first time step
+    for solver in cauchy:
+        for folderIndex, folder in enumerate(dirs):
+            os.chdir(folder)
+            solutionfname = fileBaseName+"Solution.csv"
+            solution = np.genfromtxt(solutionfname, delimiter=',') 
+            errors = []
+            for substep in substeps:
+                fnamecram = fileBaseName+solver+'Substeps'+str(substep)+'.csv'
+                approxSol = np.genfromtxt(fnamecram, delimiter=',')
+                l1ErrorArray = computeErrors.computeRMSE(solution, approxSol)
+                errors.append(l1ErrorArray[0])
+            plt.scatter(substeps, errors, label=folderNames[folderIndex])
+        plt.grid()
+        plt.yscale('log')
+        plt.ylabel('RMSE')
+        plt.xlabel('Substeps')
+        plt.legend()
+        plt.title(solver)
+        plt.savefig(imgDir+solver+'velocity25vsvelocity60.png')
+        plt.close()
+    """
+    # change working directroy
+    #os.chdir(dataFolder)
+    #solutionfname = fileBaseName+"Solution.csv"
+    #solution = np.genfromtxt(solutionfname, delimiter=',') 
+
+    """
+    fig, axs = plt.subplots(3,1, figsize=(12,16))
+    ax1, ax2, ax3 = axs[0,0], axs[0,1], axs[1,0]
+    ax4, ax5, ax6 = axs[1,1], axs[2,0], axs[2,1]
+    axs = [ax1, ax3, ax5, ax2, ax4, ax6]
+    # Plots all solvers on one plot for the first time step
+    axi = 0
+    for folderIndex, folder in enumerate(dirs):
+        os.chdir(folder)
+        solutionfname = fileBaseName+"Solution.csv"
+        solution = np.genfromtxt(solutionfname, delimiter=',') 
+        for solver in cauchy:
+            errors = []
+            ax = axs[axi]
+            for substep in substeps:
+                fnamecram = fileBaseName+solver+'Substeps'+str(substep)+'.csv'
+                approxSol = np.genfromtxt(fnamecram, delimiter=',')
+                l1ErrorArray = computeErrors.computeRMSE(solution, approxSol)
+                errors.append(l1ErrorArray[0])
+            ax.scatter(substeps, errors, label=solver)
+            ax.grid()
+            ax.set_yscale('log')
+            ax.set_ylabel('RMSE')
+            ax.set_xlabel('Substeps')
+            ax.legend()
+            ax.set_title(solver + ' ' + folderNames[folderIndex])
+            axi += 1
+    plt.savefig(imgDir+'velocity60steps10step1.png')
     plt.close()
     """
+
+    """
+    fig, axs = plt.subplots(3,2, figsize=(12,16))
+    ax1, ax2, ax3 = axs[0,0], axs[0,1], axs[1,0]
+    ax4, ax5, ax6 = axs[1,1], axs[2,0], axs[2,1]
+    axs = [ax1, ax3, ax5, ax2, ax4, ax6]
+    solverNames = ['CRAM', 'Parabolic', 'Hyperbolic']
+    velName = ['$v_{x}/dx = 2.5$', '$v_{x}/dx = 6$']
+    # Plots each solver and the reduction in error with substeps
+    axi = 0
+    for folderIndex, folder in enumerate(dirs):
+        os.chdir(folder)
+        solutionfname = fileBaseName+"Solution.csv"
+        solution = np.genfromtxt(solutionfname, delimiter=',') 
+        substeps = [0, 2, 4, 6, 12]
+        for solverIndex, solver in enumerate(cauchy):
+            ax = axs[axi]
+            for substep in substeps:
+                fnamecram = fileBaseName+solver+'Substeps'+str(substep)+'.csv'
+                approxSol = np.genfromtxt(fnamecram, delimiter=',')
+                l1ErrorArray = computeErrors.computeMaxRelError(solution, approxSol)
+                ax.scatter(times, l1ErrorArray, label='Substeps = '+str(substep))
+            ax.grid()
+            ax.set_yscale('log')
+            ax.set_ylabel('Relative $l_{\infty}$ Error')
+            ax.set_xlabel('Time (sec)')
+            ax.legend()
+            ax.set_title(solverNames[solverIndex] + ' ' + velName[folderIndex])
+            axi += 1
+    plt.tight_layout(pad=2)
+    plt.savefig(imgDir+'CauchyErrors.png')
+    plt.close()
+    """
+
+    fig, axs = plt.subplots(2,1, figsize=(6,8))
+    solverNames = ['CRAM', 'Parabolic', 'Hyperbolic', 'Pade-method1', 'Pade-method2','Taylor']
+    velName = ['$v_{x}/dx = 2.5$', '$v_{x}/dx = 6$']
+    ax1, ax2 = axs[0], axs[1]
+    axs = [ax1, ax2]
+    axi = 0
+    # Plots all solvers on one figure 
+    for folderIndex, folder in enumerate(dirs):
+        os.chdir(folder)
+        solutionfname = fileBaseName+"Solution.csv"
+        solution = np.genfromtxt(solutionfname, delimiter=',') 
+        for solverIndex, solver in enumerate(solvers):
+            ax = axs[axi]
+            substep = '6'
+            if solver in cauchy:
+                fname = fileBaseName+solver+'Substeps'+substep+'.csv'
+            else:
+                fname = fileBaseName+solver+'.csv'
+            approxSol = np.genfromtxt(fname, delimiter=',')
+            l1ErrorArray = computeErrors.computeMaxRelError(solution, approxSol)
+            ax.scatter(times, l1ErrorArray, label=solverNames[solverIndex])
+        ax.grid()
+        ax.set_yscale('log')
+        ax.set_ylabel('Relative $l_{\infty}$ Error')
+        ax.set_xlabel('Time (sec)')
+        ax.legend()
+        ax.set_title(velName[folderIndex])
+        axi += 1
+    plt.tight_layout()
+    plt.savefig(imgDir+'solverError.png')
+    plt.close()
 
 def makeGIF():
     fig = plt.figure()
@@ -233,7 +373,8 @@ def makeGIF():
 if __name__ == "__main__":
     #groupMaxs = getGroupMaxValues(data)
     #plotHeatMap(data)
-    #plotSingleStepMatlabError()
-    make2DGIF(data, maxVals)
+    #plotSingleStepMatlabErrorSingleImags()
+    plotSingleStepMatlabErrorPaperImags()
+    #make2DGIF(data, maxVals)
     #plotSinglePoint(data)
 

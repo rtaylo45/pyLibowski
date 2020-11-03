@@ -40,16 +40,13 @@ nuclideDict = {'U': [233, 234, 235, 236, 237, 238, 239],
 
 # Set the nuclides
 #transition.setProblemNuclides(nuclideDict)
-transition.setProblemNuclidesFromFile(nuclideNames)
+#transition.setProblemNuclidesFromFile(nuclideNames)
+transition.setProblemNuclidesFromExistingArray(nuclideNames)
 
-# Writes out the files
-#transition.writeLibowskiSpeciesInputFile(fbaseName+"SpeciesInputNames.dat")
-#transition.writeLibowskiSpeciesReactionFile(fbaseName+"SpeciesInputDecay.dat", decayOnly=True)
-#transition.writeLibowskiSpeciesReactionFile(fbaseName+"SpeciesInputTrans.dat", transOnly=True)
+transition.writeLibowskiSpeciesInputFile("speciesInputNamesMSRMassTransportMedium.dat")
+transition.writeLibowskiSpeciesReactionFile("speciesInputDecayMSRMassTransportMedium.dat", decayOnly=True)
+transition.writeLibowskiSpeciesReactionFile("speciesInputTransMSRMassTransportMedium.dat", transOnly=True)
 
-transition.writeLibowskiSpeciesInputFile("speciesInputNames.dat")
-transition.writeLibowskiSpeciesReactionFile("speciesInputDecay.dat", decayOnly=True)
-transition.writeLibowskiSpeciesReactionFile("speciesInputTrans.dat", transOnly=True)
 
 transMatrix = transition.buildTransitionMatrix(1.e13)
 plt.spy(transMatrix)
